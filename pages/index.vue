@@ -1,68 +1,106 @@
 <template>
   <div class="container">
-    <div>
-      <Logo />
-      <h1 class="title">cards</h1>
-      <div class="links">
-        <a
-          href="https://nuxtjs.org/"
-          target="_blank"
-          rel="noopener noreferrer"
-          class="button--green"
-        >
-          Documentation
-        </a>
-        <a
-          href="https://github.com/nuxt/nuxt.js"
-          target="_blank"
-          rel="noopener noreferrer"
-          class="button--grey"
-        >
-          GitHub
-        </a>
+    <div class="grid grid-cols-3 gap-4">
+      <div>
+        PLAYERS
+        <div v-for="player in $store.state.players" :key="player.id">
+          <div>
+            <strong :class="{ current: player.turn }">{{ player.name }}</strong>
+          </div>
+          <button
+            v-for="(card, i) in player.cards"
+            :key="i"
+            @click="handleAction(card, player)"
+          >
+            {{ card.type }}
+          </button>
+          <hr />
+          <button v-if="player.turn" @click="handleDraw(player)">
+            DRAW CARD
+          </button>
+        </div>
+      </div>
+      <div>
+        DRAW PILE
+        <pre>
+          {{ $store.state.drawPile }}
+        </pre>
+      </div>
+      <div>
+        DISCARD PILE
+        <pre>
+          {{ $store.state.discardPile }}
+        </pre>
       </div>
     </div>
   </div>
 </template>
 
 <script>
-export default {}
+// TODO: move outside this file
+const type = {
+  EXPLODE: 'EXPLODE',
+  DEFUSE: 'DEFUSE',
+  ATTACK: 'ATTACK',
+  FUTURE: 'FUTURE',
+  SHUFFLE: 'SHUFFLE',
+  NOPE: 'NOPE',
+  SKIP: 'SKIP',
+  FAVOR: 'FAVOR',
+}
+export default {
+  mounted() {
+    this.$store.commit('deal')
+  },
+  methods: {
+    handleAction(card, player) {
+      if (!player.turn) {
+        alert('NOT YOUR TURN!')
+        return false
+      }
+
+      const payload = { card, player }
+
+      switch (card.type) {
+        case type.DEFUSE:
+          this.$store.commit('defuse')
+          break
+        case type.ATTACK:
+          this.$store.commit('attack')
+          break
+        case type.FUTURE:
+          this.$store.commit('future', payload)
+          this.$store.commit('throw', payload)
+          break
+        case type.SHUFFLE:
+          this.$store.commit('shuffle')
+          break
+        case type.NOPE:
+          this.$store.commit('nope')
+          break
+        case type.SKIP:
+          this.$store.commit('skip')
+          break
+        case type.FAVOR:
+          this.$store.commit('favor')
+          break
+        default:
+          this.$store.commit('draw')
+          break
+      }
+    },
+    handleDraw(player) {
+      this.$store.commit('draw', player)
+    },
+  },
+}
 </script>
 
-<style>
-/* Sample `apply` at-rules with Tailwind CSS
-.container {
-@apply min-h-screen flex justify-center items-center text-center mx-auto;
+<style scoped>
+button {
+  margin: 1rem;
 }
-*/
-.container {
-  margin: 0 auto;
-  min-height: 100vh;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  text-align: center;
-}
-
-.title {
-  font-family: 'Quicksand', 'Source Sans Pro', -apple-system, BlinkMacSystemFont,
-    'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-  display: block;
-  font-weight: 300;
-  font-size: 100px;
-  color: #35495e;
-  letter-spacing: 1px;
-}
-
-.subtitle {
-  font-weight: 300;
-  font-size: 42px;
-  color: #526488;
-  word-spacing: 5px;
-  padding-bottom: 15px;
-}
-
-.links {
-  padding-top: 15px;
+.current {
+  color: green !important;
 }
 </style>
