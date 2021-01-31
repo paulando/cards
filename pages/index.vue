@@ -66,7 +66,8 @@ export default {
           this.$store.commit('defuse')
           break
         case type.ATTACK:
-          this.$store.commit('attack')
+          this.$store.commit('attack', payload)
+          this.$store.commit('throw', payload)
           break
         case type.FUTURE:
           this.$store.commit('future', payload)
@@ -74,15 +75,19 @@ export default {
           break
         case type.SHUFFLE:
           this.$store.commit('shuffle')
+          this.$store.commit('throw', payload)
           break
         case type.NOPE:
-          this.$store.commit('nope')
+          this.$store.commit('nope', payload)
+          this.$store.commit('throw', payload)
           break
         case type.SKIP:
-          this.$store.commit('skip')
+          this.$store.commit('skip', payload)
+          this.$store.commit('throw', payload)
           break
         case type.FAVOR:
-          this.$store.commit('favor')
+          this.$store.commit('favor', payload)
+          this.$store.commit('throw', payload)
           break
         default:
           this.$store.commit('draw')

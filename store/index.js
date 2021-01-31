@@ -29,6 +29,7 @@ const shuffle = (array) => {
 
 export const state = () => ({
   initCards: 3,
+  doubleTurn: false,
   players: [
     {
       id: 0,
@@ -167,7 +168,7 @@ export const mutations = {
 
     // state.players[1].cards.push(defuseCards[0]) // ONLY FOR TESTING
 
-    // shuffle left out cards with defuse cards
+    // shuffle left out cards with explode cards
     state.drawPile = shuffle(
       filteredDrawCards.concat(explodeCards.splice(0, state.players.length - 1))
     )
@@ -215,21 +216,46 @@ export const mutations = {
       } else {
         alert(`GAME OVER, ${player.name} ✌️🥺`)
         // TODO: GAME OVER - remove player
-        // state.players.splice(player.id, 1)
-        const playersUpdate = state.players.filter((person) => {
+        let nextPlayerIterator
+        const playersUpdate = state.players.filter((person, i) => {
           if (person.id === player.id) {
+            nextPlayerIterator = state.players.length - 1 === i ? 0 : i
             return false
           } else {
             return person
           }
         })
+        playersUpdate[nextPlayerIterator].turn = true
         state.players = playersUpdate
+
+        if (state.players.length === 1) {
+          alert(`Congrats, ${state.players[0].name}, you won!`)
+        }
+        return false
       }
     } else {
-      // TODO: put new drawn card to player's cards, pass turn to other player
-      console.log('DID NOT EXPLODED 😓')
-      state.drawPile.shift()
+      // TODO: put new drawn card to player's hand
+      console.log('DID NOT EXPLODED 👍', drawnCard)
+      const playersUpdate = state.players.map((person) => {
+        if (person.id === player.id) {
+          person.cards.push(drawnCard)
+        }
+        return person
+      })
+      state.players = playersUpdate
+      state.drawPile = clonedDrawPile
     }
+    // TODO: pass turn to the next player
+    let nextPlayerIterator
+    const playersUpdate = state.players.map((player, i) => {
+      if (player.turn) {
+        player.turn = !player.turn
+        nextPlayerIterator = state.players.length - 1 === i ? 0 : i + 1
+      }
+      return player
+    })
+    playersUpdate[nextPlayerIterator].turn = true
+    state.players = playersUpdate
   },
   pick(state, card) {
     // TODO: pick desired card from discardPile
@@ -243,11 +269,12 @@ export const mutations = {
       }
       return person
     })
-    state.discardPile.push(card)
+    state.discardPile.unshift(card)
   },
   attack(state, card) {
     // TODO: add action
     alert('ACTION_ATTACK')
+    state.doubleTurn = true
   },
   future(state, { card, player }) {
     // TODO: see top 3 cards from drawPile
@@ -258,17 +285,29 @@ export const mutations = {
       )
     }
   },
-  shuffle(state, card) {
+  shuffle(state) {
     // TODO: add action
     alert('ACTION_SHUFFLE')
+    const shuffled = shuffle(state.drawPile)
+    state.drawPile = shuffled
   },
   nope(state, card) {
     // TODO: add action
     alert('ACTION_NOPE')
   },
-  skip(state, card) {
+  skip(state, { card, player }) {
     // TODO: add action
     alert('ACTION_SKIP')
+    let nextPlayerIterator
+    const playersUpdate = state.players.filter((person, i) => {
+      if (person.id === player.id) {
+        person.turn = !person.turn
+        nextPlayerIterator = state.players.length - 1 === i ? 0 : i + 1
+      }
+      return person
+    })
+    playersUpdate[nextPlayerIterator].turn = true
+    state.players = playersUpdate
   },
   favor(state, card) {
     // TODO: add action
