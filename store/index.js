@@ -104,7 +104,7 @@ export const state = () => ({
       type: type.SHUFFLE,
     },
     {
-      id: 'shuffle2',
+      id: 'shuffle',
       type: type.SHUFFLE,
     },
     {
@@ -133,10 +133,22 @@ export const state = () => ({
     },
   ],
   discardPile: [],
+  commitAction: true,
   timeout: null,
+  timeoutDuration: 3000,
   showLogs: true,
   logs: [],
 })
+
+export const actions = {
+  shufflePrepare({ commit }, payload) {
+    commit('shufflePrepare', payload)
+  },
+  shuffle({ commit, state }, payload) {
+    const shuffledDrawPile = shuffle([...state.drawPile])
+    commit('shuffle', shuffledDrawPile)
+  },
+}
 
 export const mutations = {
   deal(state) {
@@ -342,24 +354,26 @@ export const mutations = {
 
     const future = state.drawPile.slice(0, 3)
     state.timeout = setTimeout(() => {
-      console.log('FUTURE timeout')
+      console.log(type.FUTURE + ' timeout')
       alert(
         `ACTION_FUTURE - Card 1 - ${future[0].type}, Card 2 - ${future[1].type}, Card 3 - ${future[2].type}`
       )
-    }, 3000)
+    }, state.timeoutDuration)
   },
-  shuffle(state, { card, player }) {
-    // TODO: add action
-    // alert('ACTION_SHUFFLE')
+  shufflePrepare(state, { card, player }) {
     if (state.showLogs) {
       state.logs.unshift({
         action: 'SHUFFLE',
         initiatedBy: player.name,
       })
     }
-
-    const shuffled = shuffle(state.drawPile)
-    state.drawPile = shuffled
+    state.timeout = setTimeout(() => {
+      console.log(type.SHUFFLE + ' timeout')
+      this.dispatch('shuffle') // TODO: should be possible to change state inside this setTimeout
+    }, 3000)
+  },
+  shuffle(state, shuffledPile) {
+    state.drawPile = shuffledPile
   },
   nope(state, { card, player }) {
     // TODO: add action

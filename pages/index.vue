@@ -1,7 +1,7 @@
 <template>
-  <div class="container">
-    <div class="grid grid-cols-4 gap-4">
-      <div>
+  <div class="container mx-auto py-5">
+    <div class="grid grid-flow-col grid-cols-4 grid-rows-1 gap-4">
+      <div class="p-3" style="background-color: #b2ebf2">
         PLAYERS
         <div v-for="player in $store.state.players" :key="player.id">
           <div>
@@ -25,19 +25,19 @@
           <hr />
         </div>
       </div>
-      <div>
+      <div class="p-3" style="background-color: #8bc34a">
         DRAW PILE
         <pre>
           {{ $store.state.drawPile }}
         </pre>
       </div>
-      <div>
+      <div class="p-3" style="background-color: #ffc107">
         DISCARD PILE
         <pre>
           {{ $store.state.discardPile }}
         </pre>
       </div>
-      <div>
+      <div class="p-3" style="background-color: #bdbdbd">
         LOGS
         <pre>
           {{ $store.state.logs }}
@@ -85,7 +85,7 @@ export default {
           this.$store.commit('throw', payload)
           break
         case type.SHUFFLE:
-          this.$store.commit('shuffle')
+          this.$store.dispatch('shufflePrepare', payload)
           this.$store.commit('throw', payload)
           break
         case type.SKIP:
