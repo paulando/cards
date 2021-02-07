@@ -1,23 +1,28 @@
 <template>
   <div class="container">
-    <div class="grid grid-cols-3 gap-4">
+    <div class="grid grid-cols-4 gap-4">
       <div>
         PLAYERS
         <div v-for="player in $store.state.players" :key="player.id">
           <div>
             <strong :class="{ current: player.turn }">{{ player.name }}</strong>
           </div>
-          <button
-            v-for="(card, i) in player.cards"
-            :key="i"
-            @click="handleAction(card, player)"
-          >
-            {{ card.type }}
-          </button>
+          <div v-for="(card, i) in player.cards" :key="i">
+            <button
+              v-if="card.type !== 'NOPE'"
+              @click="handleAction(card, player)"
+            >
+              {{ card.type }}
+            </button>
+            <button v-else @click="handleNope(card, player)">
+              {{ card.type }}
+            </button>
+          </div>
           <hr />
           <button v-if="player.turn" @click="handleDraw(player)">
             DRAW CARD
           </button>
+          <hr />
         </div>
       </div>
       <div>
@@ -30,6 +35,12 @@
         DISCARD PILE
         <pre>
           {{ $store.state.discardPile }}
+        </pre>
+      </div>
+      <div>
+        LOGS
+        <pre>
+          {{ $store.state.logs }}
         </pre>
       </div>
     </div>
@@ -77,10 +88,6 @@ export default {
           this.$store.commit('shuffle')
           this.$store.commit('throw', payload)
           break
-        case type.NOPE:
-          this.$store.commit('nope', payload)
-          this.$store.commit('throw', payload)
-          break
         case type.SKIP:
           this.$store.commit('skip', payload)
           this.$store.commit('throw', payload)
@@ -96,6 +103,11 @@ export default {
     },
     handleDraw(player) {
       this.$store.commit('draw', player)
+    },
+    handleNope(card, player) {
+      const payload = { card, player }
+      this.$store.commit('nope', payload)
+      this.$store.commit('throw', payload)
     },
   },
 }

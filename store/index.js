@@ -133,6 +133,9 @@ export const state = () => ({
     },
   ],
   discardPile: [],
+  timeout: null,
+  showLogs: true,
+  logs: [],
 })
 
 export const mutations = {
@@ -172,6 +175,13 @@ export const mutations = {
     state.drawPile = shuffle(
       filteredDrawCards.concat(explodeCards.splice(0, state.players.length - 1))
     )
+
+    if (state.showLogs) {
+      state.logs.unshift({
+        action: 'DEAL',
+        initiatedBy: 'SERVER',
+      })
+    }
   },
   draw(state, player) {
     // TODO: draw a card from top of the pile
@@ -180,6 +190,13 @@ export const mutations = {
     const drawnCard = clonedDrawPile.shift()
 
     if (drawnCard.type === type.EXPLODE) {
+      if (state.showLogs) {
+        state.logs.unshift({
+          action: 'DRAW/EXPLODE',
+          initiatedBy: player.name,
+        })
+      }
+
       const playerCards = []
       const hasDefuseCard = player.cards.filter((card) => {
         if (card.type === type.DEFUSE) {
@@ -192,6 +209,7 @@ export const mutations = {
       if (hasDefuseCard[0]) {
         // TODO: Use DEFUSE card then let the player pick where to put back EXPLODE card
         alert('OH SHIT, YOU EXPLODED, BRO! 🤯')
+
         const index = prompt(
           `Put explode card back in between: 0 - top of the pile, ${clonedDrawPile.length} - bottom of the pile`
         )
@@ -206,6 +224,13 @@ export const mutations = {
         const useDefuse = hasDefuseCard.pop()
         state.discardPile.push(useDefuse)
 
+        if (state.showLogs) {
+          state.logs.unshift({
+            action: 'USE DEFUSE',
+            initiatedBy: player.name,
+          })
+        }
+
         state.players.map((person) => {
           if (person.id === player.id) {
             person.cards = playerCards
@@ -215,6 +240,14 @@ export const mutations = {
         })
       } else {
         alert(`GAME OVER, ${player.name} ✌️🥺`)
+
+        if (state.showLogs) {
+          state.logs.unshift({
+            action: 'GAME OVER',
+            initiatedBy: player.name,
+          })
+        }
+
         // TODO: GAME OVER - remove player
         let nextPlayerIterator
         const playersUpdate = state.players.filter((person, i) => {
@@ -235,7 +268,7 @@ export const mutations = {
       }
     } else {
       // TODO: put new drawn card to player's hand
-      console.log('DID NOT EXPLODED 👍', drawnCard)
+      console.log('DID NOT EXPLODE 👍', drawnCard)
       const playersUpdate = state.players.map((person) => {
         if (person.id === player.id) {
           person.cards.push(drawnCard)
@@ -244,6 +277,13 @@ export const mutations = {
       })
       state.players = playersUpdate
       state.drawPile = clonedDrawPile
+
+      if (state.showLogs) {
+        state.logs.unshift({
+          action: 'DRAW',
+          initiatedBy: player.name,
+        })
+      }
     }
     // TODO: pass turn to the next player
     let nextPlayerIterator
@@ -269,35 +309,80 @@ export const mutations = {
       }
       return person
     })
+    card.usedBy = player.name // TODO: Better use id instead of a name
     state.discardPile.unshift(card)
+
+    if (state.showLogs) {
+      state.logs.unshift({
+        action: 'THROW',
+        initiatedBy: player.name,
+      })
+    }
   },
-  attack(state, card) {
+  attack(state, { card, player }) {
     // TODO: add action
-    alert('ACTION_ATTACK')
+    // alert('ACTION_ATTACK')
     state.doubleTurn = true
+
+    if (state.showLogs) {
+      state.logs.unshift({
+        action: 'ATTACK',
+        initiatedBy: player.name,
+      })
+    }
   },
   future(state, { card, player }) {
     // TODO: see top 3 cards from drawPile
-    if (card.type === type.FUTURE) {
-      const future = state.drawPile.slice(0, 3)
+    if (state.showLogs) {
+      state.logs.unshift({
+        action: 'FUTURE',
+        initiatedBy: player.name,
+      })
+    }
+
+    const future = state.drawPile.slice(0, 3)
+    state.timeout = setTimeout(() => {
+      console.log('FUTURE timeout')
       alert(
         `ACTION_FUTURE - Card 1 - ${future[0].type}, Card 2 - ${future[1].type}, Card 3 - ${future[2].type}`
       )
-    }
+    }, 3000)
   },
-  shuffle(state) {
+  shuffle(state, { card, player }) {
     // TODO: add action
-    alert('ACTION_SHUFFLE')
+    // alert('ACTION_SHUFFLE')
+    if (state.showLogs) {
+      state.logs.unshift({
+        action: 'SHUFFLE',
+        initiatedBy: player.name,
+      })
+    }
+
     const shuffled = shuffle(state.drawPile)
     state.drawPile = shuffled
   },
-  nope(state, card) {
+  nope(state, { card, player }) {
     // TODO: add action
-    alert('ACTION_NOPE')
+    // alert('ACTION_NOPE')
+    if (state.showLogs) {
+      state.logs.unshift({
+        action: 'NOPE',
+        initiatedBy: player.name,
+      })
+    }
+
+    clearTimeout(state.timeout)
   },
   skip(state, { card, player }) {
     // TODO: add action
-    alert('ACTION_SKIP')
+    // alert('ACTION_SKIP')
+    if (state.showLogs) {
+      state.logs.unshift({
+        action: 'SKIP',
+        initiatedBy: player.name,
+      })
+    }
+
     let nextPlayerIterator
     const playersUpdate = state.players.filter((person, i) => {
       if (person.id === player.id) {
@@ -309,8 +394,14 @@ export const mutations = {
     playersUpdate[nextPlayerIterator].turn = true
     state.players = playersUpdate
   },
-  favor(state, card) {
+  favor(state, { card, player }) {
     // TODO: add action
-    alert('ACTION_FAVOR')
+    // alert('ACTION_FAVOR')
+    if (state.showLogs) {
+      state.logs.unshift({
+        action: 'SKIP',
+        initiatedBy: player.name,
+      })
+    }
   },
 }
