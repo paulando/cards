@@ -50,6 +50,8 @@ export const state = () => ({
       turn: false,
     },
   ],
+  playerCurrent: {},
+  playerBefore: {},
   drawPile: [
     {
       id: 'explode1',
@@ -134,6 +136,9 @@ export const state = () => ({
   ],
   discardPile: [],
   commitAction: true,
+  isFavor: false,
+  isDemand: false,
+  is: false,
   timeout: null,
   timeoutDuration: 3000,
   showLogs: true,
@@ -152,61 +157,128 @@ export const actions = {
 
     console.log(topCardFromDiscardPile.type + ' WAS NOPPED')
 
+    commit('logAction', {
+      action: type.NOPE + '/' + topCardFromDiscardPile.type,
+      player,
+    })
+
     switch (topCardFromDiscardPile.type) {
       case type.SKIP:
         // TODO: set turn to player who placed SKIP
-        commit('logAction', {
-          action: 'NOPE/' + type.SKIP,
-          player,
-        })
         break
       case type.ATTACK:
         // TODO: set turn to player who placed ATTACK
-        commit('logAction', {
-          action: 'NOPE/' + type.ATTACK,
-          player,
-        })
         break
       case type.SHUFFLE:
         // TODO: set turn to player who placed SHUFFLE
-        commit('logAction', {
-          action: 'NOPE/' + type.SHUFFLE,
-          player,
-        })
         break
       case type.FUTURE:
-        commit('logAction', {
-          action: 'NOPE/' + type.FUTURE,
-          player,
-        })
         break
       case type.NOPE:
         // TODO: check how many NOPEs and get card and a player before first NOPE
-        commit('logAction', {
-          action: 'NOPE/' + type.NOPE,
-          player,
-        })
         break
       default:
-        commit('logAction', {
-          action: 'NOPE/',
-          player,
-        })
         break
     }
 
     commit('throw', { card, player })
   },
-  shufflePrepare({ commit }, payload) {
-    commit('shufflePrepare', payload)
+  attack({ commit }, { card, player }) {
+    // TODO: add action
+    // alert('ACTION_ATTACK')
+    commit('doubleTurn', true)
+
+    commit('logAction', {
+      action: type.ATTACK,
+      player,
+    })
+
+    commit('throw', { card, player })
   },
-  shuffle({ commit, state }, payload) {
-    const shuffledDrawPile = shuffle([...state.drawPile])
-    commit('shuffle', shuffledDrawPile)
+  favor({ commit, state }, { card, player }) {
+    // TODO: add action
+    commit('logAction', {
+      action: type.SKIP,
+      player,
+    })
+
+    const playersListText = [...state.players]
+      .map((player) => {
+        return `ID ${player.id} - ${player.name}`
+      })
+      .join(',')
+
+    const selectedPlayerId = prompt(`Pick a player (ID): ${playersListText}`)
+
+    commit('pickPlayerForFavor', { player, selectedPlayerId })
+
+    commit('throw', { card, player })
+  },
+  future({ commit }, { card, player }) {
+    // TODO: see top 3 cards from drawPile
+    commit('logAction', {
+      action: type.FUTURE,
+      player,
+    })
+
+    commit('showFuture', { card, player })
+
+    commit('throw', { card, player })
+  },
+  giveCard({ commit }) {
+    //
+  },
+  shufflePrepare({ commit }, { card, player }) {
+    commit('logAction', {
+      action: type.SHUFFLE,
+      player,
+    })
+
+    commit('shufflePrepare')
+
+    commit('throw', { card, player })
+  },
+  shuffle({ commit, state }) {
+    commit('shuffle', shuffle([...state.drawPile]))
+  },
+  skip({ commit }, { card, player }) {
+    // TODO: add action
+    commit('logAction', {
+      action: type.SKIP,
+      player,
+    })
+
+    commit('updatePlayers', player)
+    commit('throw', { card, player })
+  },
+  switchPlayer({ commit }, { player, selectedPlayerId }) {
+    // TODO: selected player must give one of his cards to player who throw Favor card
+    // Move card from one player to other
+
+    const playerGive = [...state.players].filter((player) => {
+      if (player.id !== selectedPlayerId) {
+        return false
+      }
+      return player
+    })
+
+    commit('switchPlayer', { player, type: type.FAVOR, playerGive })
+  },
+  transferCard({ commit }, { playerGive, playerReceive }) {
+    const cardsListText = playerGive.cards
+      .map((card, i) => {
+        return `ID ${i} - ${card.id}`
+      })
+      .join(',')
+    const cardId = prompt(`Pick a card (ID): ${cardsListText}`)
+    commit('transferCard', { playerGive, playerReceive, cardId })
   },
 }
 
 export const mutations = {
+  clearAction(state) {
+    clearTimeout(state.timeout)
+  },
   deal(state) {
     // TODO: remove cards with type: EXPLODE and DEFUSE, then deal number of initCards from the remaining cards to each player
 
@@ -251,8 +323,12 @@ export const mutations = {
       })
     }
   },
+  doubleTurn(state, value) {
+    state.doubleTurn = value
+  },
   draw(state, player) {
     // TODO: draw a card from top of the pile
+
     const clonedDrawPile = [...state.drawPile]
 
     const drawnCard = clonedDrawPile.shift()
@@ -276,7 +352,7 @@ export const mutations = {
       })
       if (hasDefuseCard[0]) {
         // TODO: Use DEFUSE card then let the player pick where to put back EXPLODE card
-        alert('OH SHIT, YOU EXPLODED, BRO! 🤯')
+        alert('RIP BRO 💀')
 
         const index = prompt(
           `Put explode card back in between: 0 - top of the pile, ${clonedDrawPile.length} - bottom of the pile`
@@ -364,9 +440,51 @@ export const mutations = {
     })
     playersUpdate[nextPlayerIterator].turn = true
     state.players = playersUpdate
+
+    if (state.doubleTurn) {
+      state.doubleTurn = false
+    }
+  },
+  logAction(state, { action, player }) {
+    if (state.showLogs) {
+      state.logs.unshift({
+        action,
+        initiatedBy: player.name,
+      })
+    }
+  },
+  nope(state, { player }) {
+    // TODO: add action
   },
   pick(state, card) {
     // TODO: pick desired card from discardPile
+  },
+  pickPlayerForFavor(state, payload) {
+    state.timeout = setTimeout(() => {
+      this.dispatch('switchPlayer', payload)
+    }, 3000)
+  },
+  showFuture(state) {
+    const future = state.drawPile.slice(0, 3)
+
+    state.timeout = setTimeout(() => {
+      console.log(type.FUTURE + ' timeout')
+      alert(
+        `ACTION_FUTURE - Card 1 - ${future[0].type}, Card 2 - ${future[1].type}, Card 3 - ${future[2].type}`
+      )
+    }, state.timeoutDuration)
+  },
+  shufflePrepare(state) {
+    state.timeout = setTimeout(() => {
+      console.log(type.SHUFFLE + ' timeout')
+      this.dispatch('shuffle') // TODO: should be possible to change state inside this setTimeout
+    }, 3000)
+  },
+  shuffle(state, shuffledPile) {
+    state.drawPile = shuffledPile
+  },
+  switchPlayer(state, { player, type, playerGive }) {
+    console.log('ayy')
   },
   throw(state, { card, player }) {
     // TODO: throw player's card to discardPile
@@ -380,93 +498,18 @@ export const mutations = {
     card.usedBy = player.name // TODO: Better use id instead of a name
     state.discardPile.unshift(card)
   },
-  attack(state, { card, player }) {
-    // TODO: add action
-    // alert('ACTION_ATTACK')
-    state.doubleTurn = true
-
-    if (state.showLogs) {
-      state.logs.unshift({
-        action: 'ATTACK',
-        initiatedBy: player.name,
-      })
-    }
-  },
-  future(state, { card, player }) {
-    // TODO: see top 3 cards from drawPile
-    if (state.showLogs) {
-      state.logs.unshift({
-        action: 'FUTURE',
-        initiatedBy: player.name,
-      })
-    }
-
-    const future = state.drawPile.slice(0, 3)
-    state.timeout = setTimeout(() => {
-      console.log(type.FUTURE + ' timeout')
-      alert(
-        `ACTION_FUTURE - Card 1 - ${future[0].type}, Card 2 - ${future[1].type}, Card 3 - ${future[2].type}`
-      )
-    }, state.timeoutDuration)
-  },
-  shufflePrepare(state, { card, player }) {
-    if (state.showLogs) {
-      state.logs.unshift({
-        action: 'SHUFFLE',
-        initiatedBy: player.name,
-      })
-    }
-    state.timeout = setTimeout(() => {
-      console.log(type.SHUFFLE + ' timeout')
-      this.dispatch('shuffle') // TODO: should be possible to change state inside this setTimeout
-    }, 3000)
-  },
-  shuffle(state, shuffledPile) {
-    state.drawPile = shuffledPile
-  },
-  nope(state, { player }) {
-    // TODO: add action
-  },
-  skip(state, { card, player }) {
-    // TODO: add action
-    // alert('ACTION_SKIP')
-    if (state.showLogs) {
-      state.logs.unshift({
-        action: 'SKIP',
-        initiatedBy: player.name,
-      })
-    }
-
+  updatePlayers(state, player) {
     let nextPlayerIterator
-    const playersUpdate = state.players.filter((person, i) => {
+    const playersUpdate = [...state.players].filter((person, i) => {
       if (person.id === player.id) {
         person.turn = !person.turn
         nextPlayerIterator = state.players.length - 1 === i ? 0 : i + 1
       }
       return person
     })
+
     playersUpdate[nextPlayerIterator].turn = true
+
     state.players = playersUpdate
-  },
-  favor(state, { card, player }) {
-    // TODO: add action
-    // alert('ACTION_FAVOR')
-    if (state.showLogs) {
-      state.logs.unshift({
-        action: 'SKIP',
-        initiatedBy: player.name,
-      })
-    }
-  },
-  clearAction(state) {
-    clearTimeout(state.timeout)
-  },
-  logAction(state, { action, player }) {
-    if (state.showLogs) {
-      state.logs.unshift({
-        action,
-        initiatedBy: player.name,
-      })
-    }
   },
 }

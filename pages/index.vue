@@ -19,7 +19,10 @@
             </button>
           </div>
           <hr />
-          <button v-if="player.turn" @click="handleDraw(player)">
+          <button
+            v-if="player.turn && !$store.state.isFavor"
+            @click="handleDraw(player)"
+          >
             DRAW CARD
           </button>
           <hr />
@@ -72,29 +75,34 @@ export default {
 
       const payload = { card, player }
 
+      if (this.$store.state.isFavor) {
+        this.$store.dispatch('transferCard', payload)
+        return false
+      }
+
       switch (card.type) {
         case type.DEFUSE:
           this.$store.commit('defuse')
           break
         case type.ATTACK:
-          this.$store.commit('attack', payload)
-          this.$store.commit('throw', payload)
+          this.$store.dispatch('attack', payload)
+          // this.$store.commit('throw', payload)
           break
         case type.FUTURE:
-          this.$store.commit('future', payload)
-          this.$store.commit('throw', payload)
+          this.$store.dispatch('future', payload)
+          // this.$store.commit('throw', payload)
           break
         case type.SHUFFLE:
           this.$store.dispatch('shufflePrepare', payload)
-          this.$store.commit('throw', payload)
+          // this.$store.commit('throw', payload)
           break
         case type.SKIP:
-          this.$store.commit('skip', payload)
-          this.$store.commit('throw', payload)
+          this.$store.dispatch('skip', payload)
+          // this.$store.commit('throw', payload)
           break
         case type.FAVOR:
-          this.$store.commit('favor', payload)
-          this.$store.commit('throw', payload)
+          this.$store.dispatch('favor', payload)
+          // this.$store.commit('throw', payload)
           break
         default:
           this.$store.commit('draw')
