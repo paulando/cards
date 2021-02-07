@@ -106,8 +106,7 @@ export default {
     },
     handleNope(card, player) {
       const payload = { card, player }
-      this.$store.commit('nope', payload)
-      this.$store.commit('throw', payload)
+      this.$store.dispatch('nope', payload)
     },
   },
 }

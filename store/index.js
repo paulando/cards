@@ -140,7 +140,63 @@ export const state = () => ({
   logs: [],
 })
 
+// TODO: commit throw inside actions and remove from index.vue throw commits
+
 export const actions = {
+  nope({ commit, state }, { card, player }) {
+    // TODO: add action
+
+    commit('clearAction', player)
+
+    const topCardFromDiscardPile = state.discardPile[0] // TODO: check discardPile length
+
+    console.log(topCardFromDiscardPile.type + ' WAS NOPPED')
+
+    switch (topCardFromDiscardPile.type) {
+      case type.SKIP:
+        // TODO: set turn to player who placed SKIP
+        commit('logAction', {
+          action: 'NOPE/' + type.SKIP,
+          player,
+        })
+        break
+      case type.ATTACK:
+        // TODO: set turn to player who placed ATTACK
+        commit('logAction', {
+          action: 'NOPE/' + type.ATTACK,
+          player,
+        })
+        break
+      case type.SHUFFLE:
+        // TODO: set turn to player who placed SHUFFLE
+        commit('logAction', {
+          action: 'NOPE/' + type.SHUFFLE,
+          player,
+        })
+        break
+      case type.FUTURE:
+        commit('logAction', {
+          action: 'NOPE/' + type.FUTURE,
+          player,
+        })
+        break
+      case type.NOPE:
+        // TODO: check how many NOPEs and get card and a player before first NOPE
+        commit('logAction', {
+          action: 'NOPE/' + type.NOPE,
+          player,
+        })
+        break
+      default:
+        commit('logAction', {
+          action: 'NOPE/',
+          player,
+        })
+        break
+    }
+
+    commit('throw', { card, player })
+  },
   shufflePrepare({ commit }, payload) {
     commit('shufflePrepare', payload)
   },
@@ -323,13 +379,6 @@ export const mutations = {
     })
     card.usedBy = player.name // TODO: Better use id instead of a name
     state.discardPile.unshift(card)
-
-    if (state.showLogs) {
-      state.logs.unshift({
-        action: 'THROW',
-        initiatedBy: player.name,
-      })
-    }
   },
   attack(state, { card, player }) {
     // TODO: add action
@@ -375,17 +424,8 @@ export const mutations = {
   shuffle(state, shuffledPile) {
     state.drawPile = shuffledPile
   },
-  nope(state, { card, player }) {
+  nope(state, { player }) {
     // TODO: add action
-    // alert('ACTION_NOPE')
-    if (state.showLogs) {
-      state.logs.unshift({
-        action: 'NOPE',
-        initiatedBy: player.name,
-      })
-    }
-
-    clearTimeout(state.timeout)
   },
   skip(state, { card, player }) {
     // TODO: add action
@@ -414,6 +454,17 @@ export const mutations = {
     if (state.showLogs) {
       state.logs.unshift({
         action: 'SKIP',
+        initiatedBy: player.name,
+      })
+    }
+  },
+  clearAction(state) {
+    clearTimeout(state.timeout)
+  },
+  logAction(state, { action, player }) {
+    if (state.showLogs) {
+      state.logs.unshift({
+        action,
         initiatedBy: player.name,
       })
     }
