@@ -205,7 +205,7 @@ export const actions = {
     commit('throw', { card, player })
   },
   attack({ commit }, { card, player }) {
-    // TODO: add action
+    // TODO: make doubleTurn === true, switch turn tu next player
     // alert('ACTION_ATTACK')
     commit('doubleTurn', true)
 
@@ -214,15 +214,17 @@ export const actions = {
       player,
     })
 
+    commit('updatePlayers', player)
+
     commit('throw', { card, player })
   },
   favor({ commit, state }, { card, player }) {
-    // TODO: add action
     commit('logAction', {
       action: type.FAVOR,
       player,
     })
 
+    // TODO: hide yourself and hide those without a single card
     const playersListText = [...state.players]
       .map((player) => {
         return `ID ${player.id} - ${player.name}`
@@ -444,19 +446,19 @@ export const mutations = {
         })
       }
     }
-    // TODO: pass turn to the next player
-    let nextPlayerIterator
-    const playersUpdate = state.players.map((player, i) => {
-      if (player.turn) {
-        player.turn = !player.turn
-        nextPlayerIterator = state.players.length - 1 === i ? 0 : i + 1
-      }
-      return player
-    })
-    playersUpdate[nextPlayerIterator].turn = true
-    state.players = playersUpdate
-
-    if (state.doubleTurn) {
+    if (!state.doubleTurn) {
+      // TODO: pass turn to the next player
+      let nextPlayerIterator
+      const playersUpdate = state.players.map((player, i) => {
+        if (player.turn) {
+          player.turn = !player.turn
+          nextPlayerIterator = state.players.length - 1 === i ? 0 : i + 1
+        }
+        return player
+      })
+      playersUpdate[nextPlayerIterator].turn = true
+      state.players = playersUpdate
+    } else {
       state.doubleTurn = false
     }
   },
