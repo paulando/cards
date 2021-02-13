@@ -133,6 +133,27 @@ export const state = () => ({
       id: 'favor2',
       type: type.FAVOR,
     },
+    {
+      id: 'favor3',
+      type: type.FAVOR,
+    },
+    {
+      id: 'favor4',
+      type: type.FAVOR,
+    },
+    {
+      id: 'favor5',
+      type: type.FAVOR,
+    },
+    {
+      id: 'favor6',
+      type: type.FAVOR,
+    },
+    // {
+    //   id: 'foff',
+    //   type: type.FOFF,
+    //   shuffle your cards if someone tries to steal a valuable card from you
+    // },
   ],
   discardPile: [],
   commitAction: true,
@@ -198,7 +219,7 @@ export const actions = {
   favor({ commit, state }, { card, player }) {
     // TODO: add action
     commit('logAction', {
-      action: type.SKIP,
+      action: type.FAVOR,
       player,
     })
 
@@ -208,7 +229,10 @@ export const actions = {
       })
       .join(',')
 
-    const selectedPlayerId = prompt(`Pick a player (ID): ${playersListText}`)
+    const selectedPlayerId = parseInt(
+      prompt(`Pick a player (ID): ${playersListText}`),
+      10
+    )
 
     commit('pickPlayerForFavor', { player, selectedPlayerId })
 
@@ -251,7 +275,7 @@ export const actions = {
     commit('updatePlayers', player)
     commit('throw', { card, player })
   },
-  switchPlayer({ commit }, { player, selectedPlayerId }) {
+  switchPlayer({ state, commit }, { player, selectedPlayerId }) {
     // TODO: selected player must give one of his cards to player who throw Favor card
     // Move card from one player to other
 
@@ -260,9 +284,9 @@ export const actions = {
         return false
       }
       return player
-    })
+    })[0]
 
-    commit('switchPlayer', { player, type: type.FAVOR, playerGive })
+    commit('switchPlayer', { player, cardType: type.FAVOR, playerGive })
   },
   transferCard({ commit }, { playerGive, playerReceive }) {
     const cardsListText = playerGive.cards
@@ -462,7 +486,7 @@ export const mutations = {
   pickPlayerForFavor(state, payload) {
     state.timeout = setTimeout(() => {
       this.dispatch('switchPlayer', payload)
-    }, 3000)
+    }, state.timeoutDuration)
   },
   showFuture(state) {
     const future = state.drawPile.slice(0, 3)
@@ -483,8 +507,44 @@ export const mutations = {
   shuffle(state, shuffledPile) {
     state.drawPile = shuffledPile
   },
-  switchPlayer(state, { player, type, playerGive }) {
-    console.log('ayy')
+  switchPlayer(state, { player, cardType, playerGive }) {
+    console.log('playerGive', playerGive)
+
+    if (cardType === type.FAVOR) {
+      // TODO: give turn to playerGive, show promtp with playerGive cards, transfer selected card to player
+      state.players = [...state.players].map((p) => {
+        if (p.id === playerGive.id) {
+          p.turn = true
+        } else {
+          p.turn = false
+        }
+        return p
+      })
+
+      const cardListText = playerGive.cards
+        .map((card, i) => {
+          return `ID ${i} - ${card.id}`
+        })
+        .join(',')
+
+      let selectedCard = parseInt(
+        prompt(`Pick a card (ID): ${cardListText}`),
+        10
+      )
+
+      selectedCard = playerGive.cards.splice(selectedCard, 1)[0]
+
+      state.players = [...state.players].map((p) => {
+        if (p.id === playerGive.id) {
+          p.cards = playerGive.cards
+          p.turn = false
+        } else if (p.id === player.id) {
+          p.cards.push(selectedCard) // TODO: place this card randomly in player's hand
+          p.turn = true
+        }
+        return p
+      })
+    }
   },
   throw(state, { card, player }) {
     // TODO: throw player's card to discardPile
