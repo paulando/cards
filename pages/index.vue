@@ -75,11 +75,6 @@ export default {
 
       const payload = { card, player }
 
-      if (this.$store.state.isFavor) {
-        this.$store.dispatch('transferCard', payload)
-        return false
-      }
-
       switch (card.type) {
         case type.DEFUSE:
           this.$store.commit('defuse')

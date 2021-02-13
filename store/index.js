@@ -28,7 +28,7 @@ const shuffle = (array) => {
 }
 
 export const state = () => ({
-  initCards: 3,
+  initCards: 4,
   doubleTurn: false,
   players: [
     {
@@ -50,8 +50,8 @@ export const state = () => ({
       turn: false,
     },
   ],
-  playerCurrent: {},
-  playerBefore: {},
+  // playerCurrent: {},
+  // playerBefore: {},
   drawPile: [
     {
       id: 'explode1',
@@ -101,6 +101,14 @@ export const state = () => ({
       id: 'future2',
       type: type.FUTURE,
     },
+    // {
+    //   id: 'future3',
+    //   type: type.FUTURE,
+    // },
+    // {
+    //   id: 'future4',
+    //   type: type.FUTURE,
+    // },
     {
       id: 'shuffle1',
       type: type.SHUFFLE,
@@ -118,11 +126,35 @@ export const state = () => ({
       type: type.NOPE,
     },
     {
+      id: 'nope3',
+      type: type.NOPE,
+    },
+    {
+      id: 'nope4',
+      type: type.NOPE,
+    },
+    {
+      id: 'nope5',
+      type: type.NOPE,
+    },
+    {
+      id: 'nope6',
+      type: type.NOPE,
+    },
+    {
       id: 'skip1',
       type: type.SKIP,
     },
     {
       id: 'skip2',
+      type: type.SKIP,
+    },
+    {
+      id: 'skip3',
+      type: type.SKIP,
+    },
+    {
+      id: 'skip4',
       type: type.SKIP,
     },
     {
@@ -133,22 +165,22 @@ export const state = () => ({
       id: 'favor2',
       type: type.FAVOR,
     },
-    {
-      id: 'favor3',
-      type: type.FAVOR,
-    },
-    {
-      id: 'favor4',
-      type: type.FAVOR,
-    },
-    {
-      id: 'favor5',
-      type: type.FAVOR,
-    },
-    {
-      id: 'favor6',
-      type: type.FAVOR,
-    },
+    // {
+    //   id: 'favor3',
+    //   type: type.FAVOR,
+    // },
+    // {
+    //   id: 'favor4',
+    //   type: type.FAVOR,
+    // },
+    // {
+    //   id: 'favor5',
+    //   type: type.FAVOR,
+    // },
+    // {
+    //   id: 'favor6',
+    //   type: type.FAVOR,
+    // },
     // {
     //   id: 'foff',
     //   type: type.FOFF,
@@ -157,9 +189,8 @@ export const state = () => ({
   ],
   discardPile: [],
   commitAction: true,
-  isFavor: false,
   isDemand: false,
-  is: false,
+  // is: false,
   timeout: null,
   timeoutDuration: 3000,
   showLogs: true,
@@ -174,7 +205,15 @@ export const actions = {
 
     commit('clearAction', player)
 
-    const topCardFromDiscardPile = state.discardPile[0] // TODO: check discardPile length
+    let topCardFromDiscardPile = false
+    if (state.discardPile.length) {
+      topCardFromDiscardPile = state.discardPile[0]
+    }
+
+    if (!topCardFromDiscardPile) {
+      alert("Don't waste a useful card") // TODO: show only to player who did that
+      return false
+    }
 
     console.log(topCardFromDiscardPile.type + ' WAS NOPPED')
 
@@ -186,17 +225,23 @@ export const actions = {
     switch (topCardFromDiscardPile.type) {
       case type.SKIP:
         // TODO: set turn to player who placed SKIP
+        console.log('NOPE SKIP')
+        commit('setPlayerPrevious')
         break
       case type.ATTACK:
         // TODO: set turn to player who placed ATTACK
+        commit('setPlayerPrevious')
         break
-      case type.SHUFFLE:
-        // TODO: set turn to player who placed SHUFFLE
-        break
-      case type.FUTURE:
-        break
+      // case type.SHUFFLE:
+      //   // TODO: set turn to player who placed SHUFFLE
+      //   break
+      // case type.FUTURE:
+      //   break
       case type.NOPE:
         // TODO: check how many NOPEs and get card and a player before first NOPE
+        console.log('NOPE NOPE')
+        commit('countNopes')
+        // commit('setPlayerNext')
         break
       default:
         break
@@ -249,10 +294,26 @@ export const actions = {
 
     commit('showFuture', { card, player })
 
-    commit('throw', { card, player })
+    if (card) {
+      commit('throw', { card, player })
+    }
   },
+  // getCurrentPlayer({ state }) {
+  //   return [...state.players].filter((player) => {
+  //     if (!player.turn) {
+  //       return false
+  //     }
+  //     return player
+  //   })[0]
+  // },
   giveCard({ commit }) {
     //
+  },
+  setPlayerPrevious({ commit }) {
+    commit('setPlayerPrevious')
+  },
+  setPlayerNext({ commit }) {
+    commit('setPlayerNext')
   },
   shufflePrepare({ commit }, { card, player }) {
     commit('logAction', {
@@ -262,7 +323,9 @@ export const actions = {
 
     commit('shufflePrepare')
 
-    commit('throw', { card, player })
+    if (card) {
+      commit('throw', { card, player })
+    }
   },
   shuffle({ commit, state }) {
     commit('shuffle', shuffle([...state.drawPile]))
@@ -274,8 +337,12 @@ export const actions = {
       player,
     })
 
-    commit('updatePlayers', player)
-    commit('throw', { card, player })
+    // commit('updatePlayers', player)
+    commit('setPlayerNext')
+
+    if (card) {
+      commit('throw', { card, player })
+    }
   },
   switchPlayer({ state, commit }, { player, selectedPlayerId }) {
     // TODO: selected player must give one of his cards to player who throw Favor card
@@ -295,6 +362,55 @@ export const actions = {
 export const mutations = {
   clearAction(state) {
     clearTimeout(state.timeout)
+  },
+  countNopes(state) {
+    const clonedDrawPile = [...state.discardPile]
+    const firstNopedCard = clonedDrawPile.find((card) => {
+      return card.type !== type.NOPE && card.type !== type.DEFUSE
+    })
+
+    console.log('firstNopedCard', firstNopedCard)
+
+    let countNopes = 0
+
+    for (let i = 0; i < clonedDrawPile.length; i++) {
+      if (clonedDrawPile[i].type === type.NOPE) {
+        countNopes++
+      } else {
+        break
+      }
+    }
+
+    const isEvenNopes = countNopes % 2
+
+    const player = [...state.players].filter((p) => {
+      if (!p.turn) {
+        return false
+      }
+      return p
+    })[0]
+
+    if (isEvenNopes) {
+      // TODO: try again an initial action before the first nope was placed
+      switch (firstNopedCard.type) {
+        case type.SKIP:
+          console.log(`TRY ${type.SKIP} AGAIN`)
+          this.dispatch('skip', { card: false, player })
+          break
+        case type.SHUFFLE:
+          console.log(`TRY ${type.SHUFFLE} AGAIN`)
+          this.dispatch('shufflePrepare', { card: false, player })
+          break
+        case type.FUTURE:
+          console.log(`TRY ${type.FUTURE} AGAIN`)
+          this.dispatch('future', { card: false, player })
+          break
+        default:
+          break
+      }
+    } else {
+      this.dispatch('setPlayerPrevious')
+    }
   },
   deal(state) {
     // TODO: remove cards with type: EXPLODE and DEFUSE, then deal number of initCards from the remaining cards to each player
@@ -370,6 +486,8 @@ export const mutations = {
       if (hasDefuseCard[0]) {
         // TODO: Use DEFUSE card then let the player pick where to put back EXPLODE card
         alert('RIP BRO 💀')
+
+        state.doubleTurn = false // You have died, so forget about double turn (optional)
 
         const index = prompt(
           `Put explode card back in between: 0 - top of the pile, ${clonedDrawPile.length} - bottom of the pile`
@@ -562,6 +680,34 @@ export const mutations = {
     })
 
     playersUpdate[nextPlayerIterator].turn = true
+
+    state.players = playersUpdate
+  },
+  setPlayerPrevious(state) {
+    let previousPlayer
+    const playersUpdate = [...state.players].filter((person, i) => {
+      if (person.turn) {
+        person.turn = !person.turn
+        previousPlayer = i === 0 ? state.players.length - 1 : i - 1
+      }
+      return person
+    })
+
+    playersUpdate[previousPlayer].turn = true
+
+    state.players = playersUpdate
+  },
+  setPlayerNext(state) {
+    let nextPlayer
+    const playersUpdate = [...state.players].filter((person, i) => {
+      if (person.turn) {
+        person.turn = !person.turn
+        nextPlayer = i === state.players.length - 1 ? 0 : i + 1
+      }
+      return person
+    })
+
+    playersUpdate[nextPlayer].turn = true
 
     state.players = playersUpdate
   },
