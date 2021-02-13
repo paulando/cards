@@ -288,15 +288,6 @@ export const actions = {
 
     commit('switchPlayer', { player, cardType: type.FAVOR, playerGive })
   },
-  transferCard({ commit }, { playerGive, playerReceive }) {
-    const cardsListText = playerGive.cards
-      .map((card, i) => {
-        return `ID ${i} - ${card.id}`
-      })
-      .join(',')
-    const cardId = prompt(`Pick a card (ID): ${cardsListText}`)
-    commit('transferCard', { playerGive, playerReceive, cardId })
-  },
 }
 
 export const mutations = {
